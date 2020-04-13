@@ -8,7 +8,10 @@ function db_read_location($args) {
     FROM tmp_artisanal_mining_full
     UNION
     SELECT lat, lng 
-    FROM tmp_kaluthara_iml_c";
+    FROM tmp_kaluthara_iml_c
+    UNION
+    SELECT lat, lng
+    FROM tmp_ro_al_and_iml";
 
     $result = db_execute($query);
 
