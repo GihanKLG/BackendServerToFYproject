@@ -17,60 +17,6 @@ function populate_user_profile(&$user_list, $date) {
   populate_user_kpi($user_list, $date);
 }     
 
-function db_forgot_password($args) {
-
-  $sub = "change password";
-  //$email = "lakshitha.16@itfac.mrt.ac.lk";
-  $email = $args['email'];
- 
-  $query = "SELECT id FROM tbl_contact WHERE contact = '$email'";
-  $result = db_execute($query);
-  
-  if($result) {
-    $date=date("Y-m-d");
-    $hash = password_hash($date, PASSWORD_DEFAULT);
-    $query = "UPDATE tbl_contact SET fogotton_password = '$hash' WHERE contact = '$email'";  
-    $result = db_execute($query);
-    $msg = "http://localhost:8100/forgot_password/'$hash'";
-    $result = mail($email,$sub,$msg);
-    debug(__FILE__,__FUNCTION__,__LINE__, $result);
-    if(!$result) exit(fail_return("Email sending failed...", false)); 
-    else exit(succ_return("Email sending succesfully...", false)); 
-  }
-  else exit(fail_return("invalid email address", false));
-}
-
-function db_update_password($args) {
-  $key = $args['key'];
-  $email = $args['email'];
-  $user_name = $args['user_name'];
-  $password = $args['password'];
-  $password = password_hash($password, PASSWORD_DEFAULT);
-
-  $query = "SELECT fogotton_password FROM tbl_contact WHERE contact = '$email'";
-  $result = db_execute($query);
-  $result = array_shift($result);
-  $result = $result['key'];
-
-  if($key == $result) {
-    $query = "UPDATE tbl_login_para tlp
-      INNER JOIN tbl_login tl ON tl.id = tlp.login
-      SET tlp.val = '$user_name'
-      WHERE tl.user = (SELECT tuc.user FROM cfg_contact_type cct, tbl_contact tc 
-      INNER JOIN tbl_user_contact tuc ON tuc.contact = tc.id 
-      WHERE tc.contact = '$email' AND tuc.type = cct.id AND LOWER(cct.name) = 'email') AND tlp.para=(SELECT id FROM 
-       cfg_login_para WHERE LOWER(name) = 'name')";
-    $result = db_execute($query);   
-    $query = "UPDATE tbl_login_para tlp
-    INNER JOIN tbl_login tl ON tl.id = tlp.login
-    SET tlp.val = '$password'
-    WHERE tl.user = (SELECT tuc.user FROM cfg_contact_type cct, tbl_contact tc 
-    INNER JOIN tbl_user_contact tuc ON tuc.contact = tc.id 
-    WHERE tc.contact = '$email' AND tuc.type = cct.id AND LOWER(cct.name) = 'email') AND tlp.para=(SELECT id FROM 
-     cfg_login_para WHERE LOWER(name) = 'pass')";
-    $result = db_execute($query); 
-  } else exit(fail_return(ERR_AUTHENTICATION, false));
-}
 
 function db_user_read($args) {
   $total = 0;
@@ -94,8 +40,7 @@ function db_login($args) {
   populate_user_id($user_list, 'device', $args);
 
   if ($user_list) {
-    populate_user_profile($user_list, $date);
-    
+      
     if (!session_id()) session_start();
     $session_id = session_id();
     foreach ($user_list as $user_id => $user_data) {

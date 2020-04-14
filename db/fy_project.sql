@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 13, 2020 at 07:21 PM
+-- Generation Time: Apr 14, 2020 at 11:54 AM
 -- Server version: 10.4.8-MariaDB
 -- PHP Version: 7.3.11
 
@@ -21,6 +21,344 @@ SET time_zone = "+00:00";
 --
 -- Database: `fy_project`
 --
+
+DELIMITER $$
+--
+-- Procedures
+--
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_user_by_device` (IN `in_device` VARCHAR(255))  NO SQL
+BEGIN
+	SELECT 
+		l.user AS user_id, l.id AS login_id, u.name AS user_name, 
+    	u.created_ts, u.updated_ts
+	FROM tbl_login l, tbl_user u
+	WHERE u.id = l.user AND l.id in (
+    	SELECT tlp.login FROM tbl_login_para tlp, cfg_login_para clp
+    	WHERE 
+    		tlp.para = clp.id AND LOWER(clp.name) = 'device' AND 
+    		tlp.val = sha1(in_device)
+	);
+END$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_user_by_login_pass` (IN `in_login` VARCHAR(255), IN `in_pass` VARCHAR(255))  NO SQL
+BEGIN
+	SELECT 
+		l.user AS user_id, l.id AS login_id, u.name AS user_name, 
+    	u.created_ts, u.updated_ts 
+	FROM tbl_login l, tbl_user u
+	WHERE l.id IN (
+    	SELECT tlp.login 
+    	FROM tbl_login_para tlp, cfg_login_para clp
+    	WHERE tlp.login IN (
+        	SELECT tlp.login 
+        	FROM tbl_login_para tlp, cfg_login_para clp 
+        	WHERE 
+        		tlp.para = clp.id AND LOWER(clp.name) = 'name' AND 
+        		clp.active = 1 AND tlp.val = in_login
+    	) AND tlp.para = clp.id AND LOWER(clp.name) = 'pass' AND 
+    	tlp.val = sha1(in_pass)
+	) AND u.id = l.user;
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cfg_login_para`
+--
+
+CREATE TABLE `cfg_login_para` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(20) NOT NULL,
+  `active` tinyint(1) NOT NULL,
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED NOT NULL,
+  `comment` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cfg_login_para`
+--
+
+INSERT INTO `cfg_login_para` (`id`, `name`, `active`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 'Pass', 1, '2019-09-26 02:52:10', '2019-10-05 01:32:22', 1, 'User Password'),
+(2, 'Name', 1, '2019-09-26 02:52:10', '2019-10-05 02:26:07', 1, 'Login user name'),
+(3, 'Device', 1, '2019-09-26 02:52:10', '2019-10-06 01:01:57', 1, 'Permitted device ID (No need login)'),
+(4, 'Sub', 0, '2019-10-05 09:47:06', '2019-10-05 09:47:06', 12, '');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cfg_login_type`
+--
+
+CREATE TABLE `cfg_login_type` (
+  `id` tinyint(3) UNSIGNED NOT NULL,
+  `name` varchar(20) NOT NULL,
+  `active` tinyint(1) NOT NULL,
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED NOT NULL,
+  `comment` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `cfg_login_type`
+--
+
+INSERT INTO `cfg_login_type` (`id`, `name`, `active`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 'User-Pass', 1, '2019-09-26 02:52:10', '2019-10-03 11:29:06', 12, ''),
+(2, 'Gmail', 0, '2019-09-26 02:52:10', '2019-10-03 11:26:41', 12, ''),
+(3, 'Device ID', 1, '2019-09-26 02:53:31', '2019-10-03 11:29:10', 12, ''),
+(4, 'FB', 0, '2019-09-26 02:53:31', '2019-10-03 11:26:57', 12, ''),
+(5, 'LinkedIn', 0, '2019-09-26 02:53:31', '2019-10-03 11:29:24', 12, '');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_login`
+--
+
+CREATE TABLE `tbl_login` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user` int(10) UNSIGNED NOT NULL,
+  `type` tinyint(3) UNSIGNED NOT NULL,
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED DEFAULT NULL,
+  `comment` varchar(255) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tbl_login`
+--
+
+INSERT INTO `tbl_login` (`id`, `user`, `type`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 1, 1, '2019-07-10 02:34:08', '2019-10-05 02:03:41', 1, 'History table test 2'),
+(2, 2, 1, '2019-07-10 02:34:08', '2019-11-04 14:58:10', 2, 'History test 3'),
+(3, 3, 1, '2019-07-10 02:34:08', '2019-11-04 14:58:23', 2, 'History test 4'),
+(4, 4, 1, '2019-07-10 02:34:08', '2019-11-04 14:58:23', 2, ''),
+(5, 5, 1, '2019-07-10 02:34:08', '2019-11-04 14:58:23', 2, ''),
+(6, 6, 1, '2019-07-10 02:34:08', '2019-11-04 14:58:23', 2, ''),
+(7, 7, 1, '2019-07-29 09:21:00', '2019-10-05 02:03:41', 5, ''),
+(8, 8, 1, '2019-07-31 09:23:00', '2019-10-05 02:03:41', 5, ''),
+(9, 9, 1, '2019-09-03 05:32:07', '2019-10-05 02:03:41', 2, ''),
+(10, 10, 1, '2019-09-03 05:34:45', '2019-10-05 02:03:41', 2, ''),
+(12, 12, 1, '2019-09-03 05:34:45', '2019-11-04 14:56:31', 2, ''),
+(13, 13, 1, '2019-09-03 05:34:45', '2019-11-04 16:03:45', 2, ''),
+(14, 13, 3, '2019-11-21 05:08:26', '2019-11-21 05:08:26', 1, ''),
+(15, 1, 3, '2019-11-22 09:43:01', '2019-11-22 09:43:01', 1, ''),
+(16, 18, 1, '2019-11-25 11:18:21', '2019-11-25 11:18:21', 18, ''),
+(17, 25, 1, '2019-11-28 10:50:48', '2019-11-28 10:51:28', 4, '');
+
+--
+-- Triggers `tbl_login`
+--
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_login_insert` AFTER INSERT ON `tbl_login` FOR EACH ROW BEGIN
+  INSERT INTO his_login SELECT NULL, tbl_login.*, NULL FROM `tbl_login` tbl_login WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_login_update` AFTER UPDATE ON `tbl_login` FOR EACH ROW BEGIN
+  INSERT INTO his_login SELECT NULL, tbl_login.*, NULL FROM `tbl_login` tbl_login WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_login_para`
+--
+
+CREATE TABLE `tbl_login_para` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `login` int(10) UNSIGNED NOT NULL,
+  `para` int(10) UNSIGNED NOT NULL,
+  `val` varchar(255) NOT NULL,
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED NOT NULL,
+  `comment` varchar(255) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tbl_login_para`
+--
+
+INSERT INTO `tbl_login_para` (`id`, `login`, `para`, `val`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 1, 1, '7288edd0fc3ffcbe93a0cf06e3568e28521687bc', '2019-07-10 02:34:08', '2019-10-05 01:29:50', 1, 'History table test 2'),
+(2, 2, 1, 'f7c3bc1d808e04732adf679965ccc34ca7ae3441', '2019-07-10 02:34:08', '2019-11-18 09:01:53', 1, 'History test 3'),
+(3, 3, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-10 02:34:08', '2019-11-05 05:32:18', 2, 'History test 4'),
+(4, 4, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-10 02:34:08', '2019-11-05 05:32:21', 3, ''),
+(5, 5, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-10 02:34:08', '2019-11-05 05:32:25', 1, ''),
+(6, 6, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-10 02:34:08', '2019-11-05 05:32:29', 2, ''),
+(7, 7, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-29 09:21:00', '2019-10-05 01:29:50', 5, ''),
+(8, 8, 1, '*676243218923905CF94CB52A3C9D3EB30CE8E20D', '2019-07-31 09:23:00', '2019-10-05 01:29:50', 5, ''),
+(9, 9, 1, 'f7c3bc1d808e04732adf679965ccc34ca7ae3441', '2019-09-03 05:32:07', '2019-10-05 01:29:50', 2, ''),
+(10, 10, 1, '7c3bc1d808e04732adf679965ccc34ca7ae3441', '2019-09-03 05:34:45', '2019-10-05 01:29:50', 2, ''),
+(11, 12, 1, '7288edd0fc3ffcbe93a0cf06e3568e28521687bc', '2019-09-03 05:34:45', '2019-11-04 16:02:06', 2, ''),
+(12, 12, 2, 'reeta', '2019-09-03 05:34:45', '2019-11-04 16:01:58', 2, ''),
+(13, 1, 2, 'Yakandawala', '2019-07-10 02:34:08', '2019-11-01 05:03:34', 1, 'History table test 2'),
+(14, 2, 2, 'nimantha', '2019-07-10 02:34:08', '2019-11-28 10:53:38', 1, 'History test 3'),
+(15, 3, 2, 'thisari', '2019-07-10 02:34:08', '2019-11-28 10:53:52', 2, 'History test 4'),
+(16, 4, 2, 'nimesh', '2019-07-10 02:34:08', '2019-11-05 05:32:43', 2, ''),
+(17, 5, 2, 'tharika', '2019-07-10 02:34:08', '2019-11-05 05:32:46', 1, ''),
+(18, 6, 2, 'rafees', '2019-07-10 02:34:08', '2019-11-05 05:32:49', 3, ''),
+(19, 7, 2, 'anula', '2019-07-29 09:21:00', '2019-10-03 11:14:28', 5, ''),
+(20, 8, 2, 'cooray', '2019-07-31 09:23:00', '2019-10-03 11:14:28', 5, ''),
+(21, 9, 2, 'thambirajah', '2019-09-03 05:32:07', '2019-10-03 11:14:28', 2, ''),
+(22, 10, 2, 'leel', '2019-09-03 05:34:45', '2019-10-03 11:14:28', 2, ''),
+(28, 13, 2, 'prashanthi', '2019-09-03 05:34:45', '2019-10-03 11:14:28', 2, ''),
+(29, 13, 1, '7288edd0fc3ffcbe93a0cf06e3568e28521687bc', '2019-09-03 05:34:45', '2019-11-04 16:02:06', 2, ''),
+(31, 14, 3, '62ce33ffecee3da5563c04c3122179743676c32f', '2019-11-21 05:10:04', '2019-11-22 09:42:31', 1, ''),
+(32, 15, 3, 'd44fdeb2d24e5d5f6a16b01879e6d47ea42e70ef', '2019-11-22 09:43:01', '2019-11-22 09:45:18', 1, ''),
+(33, 16, 2, 'thiloka', '2019-11-25 11:20:03', '2019-11-25 11:20:03', 18, ''),
+(34, 16, 1, '7288edd0fc3ffcbe93a0cf06e3568e28521687bc', '2019-11-25 11:20:03', '2019-11-25 11:27:49', 18, ''),
+(35, 17, 2, 'mangala', '2019-11-28 10:52:46', '2019-11-28 10:52:46', 4, ''),
+(36, 17, 1, 'b7dab3e96d5fdbab7451f75144d7065596873402', '2019-11-28 10:52:46', '2019-12-03 04:47:12', 4, '');
+
+--
+-- Triggers `tbl_login_para`
+--
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_login_para_insert` AFTER INSERT ON `tbl_login_para` FOR EACH ROW BEGIN
+  INSERT INTO his_login_para SELECT NULL, tbl_login_para.*, NULL FROM `tbl_login_para` tbl_login_para WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_login_para_update` AFTER UPDATE ON `tbl_login_para` FOR EACH ROW BEGIN
+  INSERT INTO his_login_para SELECT NULL, tbl_login_para.*, NULL FROM `tbl_login_para` tbl_login_para WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_session`
+--
+
+CREATE TABLE `tbl_session` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `login` int(10) UNSIGNED NOT NULL,
+  `session_id` varchar(255) DEFAULT NULL,
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED NOT NULL,
+  `comment` varchar(255) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tbl_session`
+--
+
+INSERT INTO `tbl_session` (`id`, `login`, `session_id`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 1, 'f8gejcmon2evf4mugts51orc4f', '2019-07-10 02:34:08', '2020-04-14 09:10:51', 1, 'History table test 2'),
+(2, 2, '1234567', '2019-07-10 02:34:08', '2019-11-05 06:14:17', 1, 'History test 3'),
+(3, 3, '12345', '2019-07-10 02:34:08', '2019-11-05 06:14:21', 1, 'History test 4'),
+(4, 4, '2468', '2019-07-10 02:34:08', '2019-11-05 06:14:24', 3, ''),
+(5, 5, '456789', '2019-07-10 02:34:08', '2019-11-05 06:14:28', 1, ''),
+(9, 9, '1234579', '2019-09-03 05:32:07', '2019-10-05 01:29:50', 2, ''),
+(10, 10, '12345679', '2019-09-03 05:34:45', '2019-10-05 01:29:50', 2, ''),
+(12, 8, '8a8o6l0a8ub8cq1uft2kn6pgtc', '2019-09-03 05:34:45', '2020-01-16 07:18:02', 2, ''),
+(14, 12, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:02:14', '2019-11-05 06:14:43', 1, ''),
+(15, 7, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:02:14', '2019-11-05 06:14:48', 2, ''),
+(16, 8, '8a8o6l0a8ub8cq1uft2kn6pgtc', '2019-11-04 16:02:14', '2020-01-16 07:18:02', 2, ''),
+(17, 9, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:02:14', '2019-11-05 06:14:56', 2, ''),
+(18, 10, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:02:14', '2019-11-05 06:15:00', 1, ''),
+(19, 13, '3nfn4r8aibkpqg76bnnapr7sd0', '2019-11-04 16:03:49', '2020-01-16 07:58:04', 1, ''),
+(20, 7, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:03:49', '2019-11-05 06:15:07', 2, ''),
+(21, 8, '8a8o6l0a8ub8cq1uft2kn6pgtc', '2019-11-04 16:03:49', '2020-01-16 07:18:02', 1, ''),
+(22, 9, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:03:49', '2019-11-05 06:15:15', 1, ''),
+(23, 10, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:03:49', '2019-11-05 06:15:23', 1, ''),
+(25, 7, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:06:30', '2019-11-05 06:15:30', 2, ''),
+(26, 8, '8a8o6l0a8ub8cq1uft2kn6pgtc', '2019-11-04 16:06:30', '2020-01-16 07:18:02', 2, ''),
+(27, 9, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:06:30', '2019-11-05 06:15:37', 1, ''),
+(28, 10, 't9c0qa66e81kv4gclialrembq9', '2019-11-04 16:06:30', '2019-11-05 06:15:41', 1, ''),
+(29, 16, NULL, '2019-11-25 11:21:41', '2019-11-25 11:21:41', 18, '');
+
+--
+-- Triggers `tbl_session`
+--
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_session_insert` AFTER INSERT ON `tbl_session` FOR EACH ROW BEGIN
+  INSERT INTO his_session SELECT NULL, tbl_session.*, NULL FROM `tbl_session` tbl_session WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_session_update` AFTER UPDATE ON `tbl_session` FOR EACH ROW BEGIN
+  INSERT INTO his_session SELECT NULL, tbl_session.*, NULL FROM `tbl_session` tbl_session WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_user`
+--
+
+CREATE TABLE `tbl_user` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(50) NOT NULL COMMENT 'Quick/Common name',
+  `created_ts` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `updated_by` int(10) UNSIGNED DEFAULT NULL,
+  `comment` varchar(255) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `tbl_user`
+--
+
+INSERT INTO `tbl_user` (`id`, `name`, `created_ts`, `updated_ts`, `updated_by`, `comment`) VALUES
+(1, 'ykandwaka', '2019-07-10 02:34:08', '2019-12-20 06:14:57', 1, 'History table test 2'),
+(2, 'Nimantha Yakandawala', '2019-07-10 02:34:08', '2019-11-18 10:55:21', 2, 'History test 3'),
+(3, 'Thisari', '2019-07-10 02:34:08', '2019-11-25 07:27:41', 2, 'History test 4'),
+(4, 'Dilini', '2019-07-10 02:34:08', '2019-11-18 10:55:51', 2, ''),
+(5, 'Tharika Weerakoon', '2019-07-10 02:34:08', '2019-11-04 12:05:14', 2, ''),
+(6, 'Rafees Kamurudeen', '2019-07-10 02:34:08', '2019-11-04 12:05:14', 2, ''),
+(7, 'Anula Herath', '2019-07-29 09:21:00', '2019-09-27 04:05:54', 5, ''),
+(8, 'Cooray', '2019-07-31 09:23:00', '2019-11-13 08:36:02', 5, ''),
+(9, 'Mr. Thambirajah', '2019-09-03 05:32:07', '2019-11-20 03:15:47', 2, ''),
+(10, 'Leela Edirisinghe', '2019-09-03 05:34:45', '2019-11-14 04:42:30', 2, ''),
+(12, 'Reata Dekaw', '2019-07-10 02:34:08', '2019-11-13 08:35:35', 1, 'Reeta is not any more ID 0'),
+(13, 'Prashanthi', '2019-10-22 17:25:22', '2019-11-04 15:59:17', 1, ''),
+(14, 'Prashanthi Perera', '2019-11-18 04:14:09', '2019-11-18 04:14:09', 4, ''),
+(15, 'Lilakshi Mendis', '2019-11-18 04:14:09', '2019-11-18 04:14:09', 4, ''),
+(16, 'Rama Krishnan', '2019-11-20 03:20:41', '2019-11-20 03:20:41', 4, ''),
+(17, 'Dr.Lalith Kothalawala', '2019-11-25 05:01:09', '2019-11-25 05:01:09', 1, ''),
+(18, 'Thiloka Samarasinghe', '2019-11-25 05:01:09', '2019-11-25 05:01:09', 1, ''),
+(19, 'Dr.Chandra Peramuna', '2019-11-25 05:30:06', '2019-11-25 05:30:06', 18, ''),
+(20, 'Karunawathie Manike', '2019-11-25 05:35:32', '2019-11-25 05:35:32', 18, ''),
+(21, 'Piyal Saparamadu', '2019-11-25 05:35:32', '2019-11-25 05:35:32', 18, ''),
+(22, 'Lalitha Padmini', '2019-11-25 05:35:32', '2019-11-25 05:35:32', 18, ''),
+(23, 'Chandra Athapattu', '2019-11-25 05:35:32', '2019-11-25 05:35:32', 18, ''),
+(24, 'Seelawathi Kumari', '2019-11-25 05:35:32', '2019-11-25 05:35:32', 18, ''),
+(25, 'Mangala', '2019-11-28 10:48:39', '2019-11-28 10:48:39', 4, '');
+
+--
+-- Triggers `tbl_user`
+--
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_user_insert` AFTER INSERT ON `tbl_user` FOR EACH ROW BEGIN
+	INSERT INTO his_user SELECT NULL, u.*, NULL FROM `tbl_user` u WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `trigger_after_tbl_user_update` AFTER UPDATE ON `tbl_user` FOR EACH ROW BEGIN
+	INSERT INTO his_user SELECT NULL, u.*, NULL FROM `tbl_user` u WHERE id=NEW.id;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -1563,6 +1901,57 @@ INSERT INTO `tmp_ro_al_and_iml` (`NO`, `ML NO`, `Cat`, `Mineral`, `NAME`, `ADDRE
 --
 
 --
+-- Indexes for table `cfg_login_para`
+--
+ALTER TABLE `cfg_login_para`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_cfg_login_para` (`name`) USING BTREE,
+  ADD KEY `fk_cfg_login_para_updated_by` (`updated_by`) USING BTREE,
+  ADD KEY `index_cfg_login_para` (`active`,`created_ts`,`updated_ts`) USING BTREE;
+
+--
+-- Indexes for table `cfg_login_type`
+--
+ALTER TABLE `cfg_login_type`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_cfg_login_type` (`name`) USING BTREE,
+  ADD KEY `fk_cfg_login_type_updated_by` (`updated_by`) USING BTREE,
+  ADD KEY `index_cfg_login_type` (`created_ts`,`updated_ts`) USING BTREE;
+
+--
+-- Indexes for table `tbl_login`
+--
+ALTER TABLE `tbl_login`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_tbl_login_type` (`type`) USING BTREE,
+  ADD KEY `fk_tbl_login_updated_by` (`updated_by`) USING BTREE,
+  ADD KEY `fk_tbl_login_user` (`user`) USING BTREE;
+
+--
+-- Indexes for table `tbl_login_para`
+--
+ALTER TABLE `tbl_login_para`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_tbl_login_para_para` (`para`) USING BTREE,
+  ADD KEY `fk_tbl_login_para_updated_by` (`updated_by`) USING BTREE,
+  ADD KEY `fk_tbl_login_para_login` (`login`) USING BTREE;
+
+--
+-- Indexes for table `tbl_session`
+--
+ALTER TABLE `tbl_session`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_tbl_session_login` (`login`) USING BTREE,
+  ADD KEY `fk_tbl_session_updated_by` (`updated_by`) USING BTREE;
+
+--
+-- Indexes for table `tbl_user`
+--
+ALTER TABLE `tbl_user`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_tbl_user_updated_by` (`updated_by`);
+
+--
 -- Indexes for table `tmp_artisanal_mining_full`
 --
 ALTER TABLE `tmp_artisanal_mining_full`
@@ -1579,6 +1968,91 @@ ALTER TABLE `tmp_kaluthara_iml_c`
 --
 ALTER TABLE `tmp_ro_al_and_iml`
   ADD PRIMARY KEY (`NO`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `cfg_login_para`
+--
+ALTER TABLE `cfg_login_para`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `cfg_login_type`
+--
+ALTER TABLE `cfg_login_type`
+  MODIFY `id` tinyint(3) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT for table `tbl_login`
+--
+ALTER TABLE `tbl_login`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `tbl_login_para`
+--
+ALTER TABLE `tbl_login_para`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+
+--
+-- AUTO_INCREMENT for table `tbl_session`
+--
+ALTER TABLE `tbl_session`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+
+--
+-- AUTO_INCREMENT for table `tbl_user`
+--
+ALTER TABLE `tbl_user`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `cfg_login_para`
+--
+ALTER TABLE `cfg_login_para`
+  ADD CONSTRAINT `fk_cfg_login_para_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Constraints for table `cfg_login_type`
+--
+ALTER TABLE `cfg_login_type`
+  ADD CONSTRAINT `fk_cfg_login_type_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tbl_login`
+--
+ALTER TABLE `tbl_login`
+  ADD CONSTRAINT `fk_tbl_login_type` FOREIGN KEY (`type`) REFERENCES `cfg_login_type` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tbl_login_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tbl_login_user` FOREIGN KEY (`user`) REFERENCES `tbl_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tbl_login_para`
+--
+ALTER TABLE `tbl_login_para`
+  ADD CONSTRAINT `fk_tbl_login_para_login` FOREIGN KEY (`login`) REFERENCES `tbl_login` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tbl_login_para_para` FOREIGN KEY (`para`) REFERENCES `cfg_login_para` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tbl_login_para_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tbl_session`
+--
+ALTER TABLE `tbl_session`
+  ADD CONSTRAINT `fk_tbl_session_login` FOREIGN KEY (`login`) REFERENCES `tbl_login` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_tbl_session_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tbl_user`
+--
+ALTER TABLE `tbl_user`
+  ADD CONSTRAINT `fk_tbl_user_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `tbl_user` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
