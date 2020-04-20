@@ -10,9 +10,9 @@ switch ($action) {
   case ACTION_READ:
     db_read_location($_REQUEST);
     break;
-  case ACTION_MONTHLY_READ:
-    db_read_monthly_report($_REQUEST);
-  break;  
+  case "division_read":
+    db_read_division($_REQUEST);
+    break;  
   default:
     exit(fail_return(ERR_UNKNOWN_ACTION, false));
 }

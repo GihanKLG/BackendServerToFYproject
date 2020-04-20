@@ -20,6 +20,23 @@ function db_read_location($args) {
     ));
 }
 
+function db_read_division($args) {
+  // $query = "SELECT DISTINCT Village AS reagion
+  // FROM tmp_artisanal_mining_full
+  // UNION
+  // SELECT DISTINCT D.S.Division AS reagion
+  // FROM tmp_kaluthara_iml_c";
+  $query = "SELECT Village AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
+    FROM tmp_artisanal_mining_full
+    GROUP BY Division";
+
+  $result = db_execute($query);
+
+  succ_return(array(
+    'Location' => $result,
+    ));
+}
+
 // function getDistance($point1, $point2){
 
 //   $radius      = 3958;      // Earth's radius (miles)
