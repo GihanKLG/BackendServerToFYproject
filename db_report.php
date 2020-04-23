@@ -20,6 +20,7 @@ function db_read_location($args) {
     ));
 }
 
+//http://localhost/googlemap/svr/report.php?action=division_read&session_id=ss9h138m6eptg7g4ffgn5p5511
 function db_read_division($args) {
   // $query = "SELECT DISTINCT Village AS reagion
   // FROM tmp_artisanal_mining_full
