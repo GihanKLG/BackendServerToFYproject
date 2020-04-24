@@ -9,9 +9,9 @@ function db_read_location($args) {
     UNION
     SELECT lat, lng, Cubes AS cubes 
     FROM tmp_kaluthara_iml_c
-    UNION
-    SELECT lat, lng, Cu AS cubes
-    FROM tmp_ro_al_and_iml";
+    -- UNION
+    -- SELECT lat, lng, Cu AS cubes
+    -- FROM tmp_ro_al_and_iml";
 
     $result = db_execute($query);
 
@@ -29,6 +29,10 @@ function db_read_division($args) {
   // FROM tmp_kaluthara_iml_c";
   $query = "SELECT Village AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_artisanal_mining_full
+    GROUP BY Division
+    UNION 
+    SELECT gsdivision AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
+    FROM tmp_kaluthara_iml_c
     GROUP BY Division";
 
   $result = db_execute($query);
