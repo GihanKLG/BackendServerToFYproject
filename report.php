@@ -12,7 +12,10 @@ switch ($action) {
     break;
   case "division_read":
     db_read_division($_REQUEST);
-    break;  
+    break; 
+  case "minimum_distance":
+    db_read_minimum_division($_REQUEST);  
+    break;
   default:
     exit(fail_return(ERR_UNKNOWN_ACTION, false));
 }
