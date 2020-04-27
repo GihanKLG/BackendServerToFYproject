@@ -36,29 +36,92 @@ function db_read_division($args) {
     GROUP BY Division";
 
   $result = db_execute($query);
+  $length = sizeof($result);
+  // $points = array();
+  // $coord = array(3.1415926, 57.29578);
+
+
+  for($i=0;$i<$length;$i++) {
+    if($result[$i]['count'] > 2) {
+      $size = $result[$i]['count'];
+      $lat = $result[$i]['lat'];
+      $lat = explode(',', $lat);
+      $lng = $result[$i]['lng'];
+      $lng = explode(',', $lng);
+      $arr_length = sizeof($lat);
+      $points = array();
+      //debug(__FILE__, __FUNCTION__, __LINE__, $arr_length);
+      for($j=0;$j<$arr_length;$j++) {
+        // $point1['lat'] = $lat[$j];
+        // $point1['long'] = $lng[$j];
+        $point1 = array();
+        // $point1.push($lat[$j]);
+        // $point1.push($lng[$j]);
+        $point1['0'] = $lat[$j];
+        $point1['1'] = $lng[$j];
+        array_push($points, $point1);
+      }
+  //debug(__FILE__, __FUNCTION__, __LINE__, $points);
+  $points_length = sizeof($points);
+  for($k=0;$k<$points_length;$k++) {
+    $coord = $points[$k];  
+  debug(__FILE__, __FUNCTION__, __LINE__, $coord);  
+  $closestPoint = $closestDistance= false;;
+
+  foreach($points as $point) {
+    list($x,$y) = $point;
+
+    // Not compared yet, use first poit as closest
+    if($closestDistance === false OR $closestDistance == 0) {
+        $closestPoint = $point;
+        $closestDistance = distance($x,$y,$coord[0],$coord[1]);
+        continue;
+    }
+
+    // If distance in any direction (x/y/z) is bigger than closest distance so far: skip point
+    if(abs($coord[0] - $x) > $closestDistance) continue;
+    if(abs($coord[1] - $y) > $closestDistance) continue;
+ 
+    $newDistance = distance($x,$y,$coord[0],$coord[1]);
+
+    if($newDistance < $closestDistance) {
+        $closestPoint = $point;
+        $closestDistance = distance($x,$y,$coord[0],$coord[1]);
+    }       
+}
+
+// var_dump($closestPoint);
+debug(__FILE__, __FUNCTION__, __LINE__, $closestDistance);
+}
+}
+} 
 
   succ_return(array(
     'Location' => $result,
     ));
 }
 
-// function getDistance($point1, $point2){
+function distance($x1,$y1,$x2,$y2) {
+  return sqrt(pow($x1-$x2,2) + pow($y1 - $y2,2));
+}
 
-//   $radius      = 3958;      // Earth's radius (miles)
-//   $pi          = 3.1415926;
-//   $deg_per_rad = 57.29578;  // Number of degrees/radian (for conversion)
+function getDistance($point1, $point2){
 
-//   $distance = ($radius * $pi * sqrt(
-//               ($point1['lat'] - $point2['lat'])
-//               * ($point1['lat'] - $point2['lat'])
-//               + cos($point1['lat'] / $deg_per_rad)  // Convert these to
-//               * cos($point2['lat'] / $deg_per_rad)  // radians for cos()
-//               * ($point1['long'] - $point2['long'])
-//               * ($point1['long'] - $point2['long'])
-//       ) / 180);
+  $radius      = 3958;      // Earth's radius (miles)
+  $pi          = 3.1415926;
+  $deg_per_rad = 57.29578;  // Number of degrees/radian (for conversion)
 
-//   $distance = round($distance,1);
-//   return $distance;  // Returned using the units used for $radius.
-// }
+  $distance = ($radius * $pi * sqrt(
+              ($point1['lat'] - $point2['lat'])
+              * ($point1['lat'] - $point2['lat'])
+              + cos($point1['lat'] / $deg_per_rad)  // Convert these to
+              * cos($point2['lat'] / $deg_per_rad)  // radians for cos()
+              * ($point1['long'] - $point2['long'])
+              * ($point1['long'] - $point2['long'])
+      ) / 180);
+
+  $distance = round($distance,1);
+  return $distance;  // Returned using the units used for $radius.
+}
   
 ?>
