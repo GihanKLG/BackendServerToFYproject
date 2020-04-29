@@ -22,26 +22,32 @@ function db_read_location($args) {
 
 //http://localhost/googlemap/svr/report.php?action=division_read&session_id=ss9h138m6eptg7g4ffgn5p5511
 function db_read_division($args) {
-  // $query = "SELECT DISTINCT Village AS reagion
-  // FROM tmp_artisanal_mining_full
-  // UNION
-  // SELECT DISTINCT D.S.Division AS reagion
-  // FROM tmp_kaluthara_iml_c";
+  $query = "SELECT DISTINCT Village AS reagion
+  FROM tmp_artisanal_mining_full
+  UNION
+  SELECT DISTINCT D.S.Division AS reagion
+  FROM tmp_kaluthara_iml_c";
   $query = "SELECT Village AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_artisanal_mining_full
     GROUP BY Division
     UNION 
     SELECT gsdivision AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_kaluthara_iml_c
+    GROUP BY Division
+    UNION
+    SELECT gs AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
+    FROM tmp_ro_al_and_iml
     GROUP BY Division";
 
   $result = db_execute($query);
   $length = sizeof($result);
   // $points = array();
   // $coord = array(3.1415926, 57.29578);
+  // $min = 100;
 
 
   for($i=0;$i<$length;$i++) {
+    $min = 100000000000;
     if($result[$i]['count'] > 2) {
       debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['count']);
       $size = $result[$i]['count'];
@@ -68,15 +74,16 @@ function db_read_division($args) {
   $points_length = sizeof($points);
   for($k=0;$k<$points_length;$k++) {
       $coord = $points[$k];  
-      //debug(__FILE__, __FUNCTION__, __LINE__, $coord);  
+      debug(__FILE__, __FUNCTION__, __LINE__, $coord);  
       $closestPoint = $closestDistance= false;;
 
       foreach($points as $point) {
         list($x,$y) = $point;
 
         // Not compared yet, use first poit as closest
-        if($closestDistance === false OR $closestDistance == 0) {
+        if($closestDistance === false) {
             $closestPoint = $point;
+            if($x != $coord[0] && $y != $coord[1])
             $closestDistance = distance($x,$y,$coord[0],$coord[1]);
             continue;
         }
@@ -86,17 +93,33 @@ function db_read_division($args) {
         if(abs($coord[1] - $y) > $closestDistance) continue;
     
         $newDistance = distance($x,$y,$coord[0],$coord[1]);
+        if($result[$i]['count'] == 12)
+        debug(__FILE__, __FUNCTION__, __LINE__, $x, $y, $newDistance);
 
         if($newDistance < $closestDistance) {
             $closestPoint = $point;
+            if($x != $coord[0] && $y != $coord[1])
             $closestDistance = distance($x,$y,$coord[0],$coord[1]);
         }       
     }
 
+    if($closestDistance < $min && $closestDistance != 0) {
+    $min = $closestDistance;  
+    $result[$i]['min_distance'] = $min;
+    }
     // var_dump($closestPoint);
     debug(__FILE__, __FUNCTION__, __LINE__, $closestDistance);
   }
-}
+  if($min == 100000000000) {
+    debug(__FILE__, __FUNCTION__, __LINE__, "error");
+    $result[$i]['min_distance'] = 10;
+  }
+  if($result[$i]['min_distance'] > 10) $result[$i]['min_distance'] = 10;
+  debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['min_distance']);
+  
+  }
+  else
+  $result[$i]['min_distance'] = 10;
 } 
 
   succ_return(array(
