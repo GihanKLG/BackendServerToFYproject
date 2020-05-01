@@ -72,9 +72,10 @@ function db_read_division($args) {
       debug(__FILE__, __FUNCTION__, __LINE__, $points);
   //debug(__FILE__, __FUNCTION__, __LINE__, $points);
   $points_length = sizeof($points);
+  $min_dist = array();
   for($k=0;$k<$points_length;$k++) {
       $coord = $points[$k];  
-      debug(__FILE__, __FUNCTION__, __LINE__, $coord);  
+      //debug(__FILE__, __FUNCTION__, __LINE__, $coord);  
       $closestPoint = $closestDistance= false;;
 
       foreach($points as $point) {
@@ -85,6 +86,8 @@ function db_read_division($args) {
             $closestPoint = $point;
             if($x != $coord[0] && $y != $coord[1])
             $closestDistance = distance($x,$y,$coord[0],$coord[1]);
+            if($result[$i]['count'] == 12)
+            //debug(__FILE__, __FUNCTION__, __LINE__, $x, $y, $closestDistance);
             continue;
         }
 
@@ -93,8 +96,8 @@ function db_read_division($args) {
         if(abs($coord[1] - $y) > $closestDistance) continue;
     
         $newDistance = distance($x,$y,$coord[0],$coord[1]);
-        if($result[$i]['count'] == 12)
-        debug(__FILE__, __FUNCTION__, __LINE__, $x, $y, $newDistance);
+        //if($result[$i]['count'] == 12)
+        //debug(__FILE__, __FUNCTION__, __LINE__, $x, $y, $newDistance);
 
         if($newDistance < $closestDistance) {
             $closestPoint = $point;
@@ -103,23 +106,26 @@ function db_read_division($args) {
         }       
     }
 
-    if($closestDistance < $min && $closestDistance != 0) {
-    $min = $closestDistance;  
-    $result[$i]['min_distance'] = $min;
-    }
+    // if($closestDistance < $min && $closestDistance != 0) {
+    // $min = $closestDistance;  
+    // $result[$i]['min_distance'] = $min;
+    // }
     // var_dump($closestPoint);
-    debug(__FILE__, __FUNCTION__, __LINE__, $closestDistance);
+    if($closestDistance > 10) $closestDistance = 10; 
+    $min_dist[$k] = $closestDistance;
+    //debug(__FILE__, __FUNCTION__, __LINE__, $closestDistance);
   }
-  if($min == 100000000000) {
-    debug(__FILE__, __FUNCTION__, __LINE__, "error");
-    $result[$i]['min_distance'] = 10;
-  }
-  if($result[$i]['min_distance'] > 10) $result[$i]['min_distance'] = 10;
+  // if($min == 100000000000) {
+  //   debug(__FILE__, __FUNCTION__, __LINE__, "error");
+  //   $result[$i]['min_distance'] = 10;
+  // }
+  $result[$i]['min_distance'] = $min_dist;
+  //if($result[$i]['min_distance'] > 10) $result[$i]['min_distance'] = 10;
   debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['min_distance']);
   
   }
   else
-  $result[$i]['min_distance'] = 10;
+  $result[$i]['min_distance'] = array(10);
 } 
 
   succ_return(array(
@@ -167,7 +173,7 @@ function distance($lat1, $lon1, $lat2, $lon2) {
   $dlon = $lon2 - $lon1;
   $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
   $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-  $km = ($r * $c)*1000;
+  $km = ($r * $c)*500;
 
   //echo '<br/>'.$km;
   return $km;
