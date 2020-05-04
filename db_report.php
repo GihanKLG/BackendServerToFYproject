@@ -185,5 +185,26 @@ function distance($lat1, $lon1, $lat2, $lon2) {
   //echo '<br/>'.$km;
   return $km;
 }
-  
+
+//http://localhost/googlemap/svr/report.php?action=district_count&session_id=ss9h138m6eptg7g4ffgn5p5511
+function db_read_district_count($args) {
+  $query = "SELECT count(seq) AS count, District
+  FROM tmp_artisanal_mining_full
+  GROUP BY District
+  UNION
+  SELECT count(NO) AS count, district
+  FROM tmp_ro_al_and_iml
+  GROUP BY district
+  UNION
+  SELECT count(NO) AS count, District
+  FROM tmp_kaluthara_iml_c
+  GROUP BY District";
+
+ $result = db_execute($query);
+
+succ_return(array(
+  'district_count' => $result,
+  ));
+
+}  
 ?>
