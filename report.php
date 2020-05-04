@@ -16,6 +16,9 @@ switch ($action) {
   case "minimum_distance":
     db_read_minimum_division($_REQUEST);  
     break;
+  case "district_count":
+    db_read_district_count($_REQUEST); 
+   break; 
   default:
     exit(fail_return(ERR_UNKNOWN_ACTION, false));
 }
