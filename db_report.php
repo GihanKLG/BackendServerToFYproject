@@ -49,7 +49,7 @@ function db_read_division($args) {
   for($i=0;$i<$length;$i++) {
     $sum = $sum + $result[$i]['count'];
     $min = 100000000000;
-    if($result[$i]['count'] > 2) {
+    if($result[$i]['count'] >= 2) {
       //debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['count']);
       $size = $result[$i]['count'];
       $lat = $result[$i]['lat'];
