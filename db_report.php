@@ -4,6 +4,12 @@ require_once 'db_user.php';
 function db_read_location($args) {
 
   //http://localhost/googlemap/svr/report.php?action=read&session_id=ss9h138m6eptg7g4ffgn5p5511
+   debug(__FILE__, __FUNCTION__, __LINE__, $args['location']);
+   $location = $args['location'];
+   $size = strlen($location);
+   debug(__FILE__, __FUNCTION__, __LINE__, $size-2);
+   $location = substr($location, 7, 25);
+   debug(__FILE__, __FUNCTION__, __LINE__, $location);
    $query = "SELECT lat, lng, Village AS Division 
     FROM tmp_artisanal_mining_full
     UNION
