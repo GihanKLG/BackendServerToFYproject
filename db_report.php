@@ -1,15 +1,14 @@
 <?php
 require_once 'db_user.php';
 
+
+//http://localhost/googlemap/svr/report.php?action=read&session_id=ss9h138m6eptg7g4ffgn5p5511
 function db_read_location($args) {
 
-  //http://localhost/googlemap/svr/report.php?action=read&session_id=ss9h138m6eptg7g4ffgn5p5511
-   debug(__FILE__, __FUNCTION__, __LINE__, $args['location']);
    $location = $args['location'];
    $size = strlen($location);
-   debug(__FILE__, __FUNCTION__, __LINE__, $size-2);
-   $location = substr($location, 7, 25);
-   debug(__FILE__, __FUNCTION__, __LINE__, $location);
+   $location = substr($location, 7, $size-8);
+   $current_location = explode(', ', $location);
    $query = "SELECT lat, lng, Village AS Division 
     FROM tmp_artisanal_mining_full
     UNION
@@ -18,11 +17,25 @@ function db_read_location($args) {
     -- UNION
     -- SELECT lat, lng, Cu AS cubes
     -- FROM tmp_ro_al_and_iml";
-
     $result = db_execute($query);
+    $min_dist = distance($current_location[0], $current_location[1], $result[1]['lat'], $result[1]['lng']);
+    $size = sizeof($result);
+    for($i=0;$i<$size;$i++) {
+      $d = distance($current_location[0], $current_location[1], $result[$i]['lat'], $result[$i]['lng']);
+      if($min_dist > $d) {
+        $min_dist = $d;
+        $min_lat = $result[$i]['lat'];
+        $min_lng = $result[$i]['lng'];
+      }  
+      //debug(__FILE__, __FUNCTION__, __LINE__, $min_dist);
+    }
+    debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng);
+    $nearest['lat'] = $min_lat;
+    $nearest['lng'] = $min_lng;
 
     succ_return(array(
     'Location' => $result,
+    'nearest_place' => $nearest
     ));
 }
 
