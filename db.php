@@ -22,6 +22,9 @@ function get_conn() {
     $err_no = mysqli_connect_errno();
     if ($err_no) exit(db_error(__FILE__, __FUNCTION__, __LINE__, ERR_DB_CONNECT, $err_no, $err_no));
   }
+  list($usec, $sec) = explode(" ", microtime());
+  $time =  date("Y-m-d H:i:s:",$sec).intval(round($usec*1000));
+  info(__FILE__, __FUNCTION__, __LINE__, $time);
   return $_SESSION['mysql_conn']; 
 }
 

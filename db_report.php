@@ -2,7 +2,7 @@
 require_once 'db_user.php';
 
 
-//http://localhost/googlemap/svr/report.php?action=read&session_id=ss9h138m6eptg7g4ffgn5p5511
+//http://localhost/googlemap/svr/report.php?action=read&location=LatLng(5.959917,%2080.601349)&session_id=123456
 function db_read_location($args) {
 
    $location = $args['location'];

@@ -78,9 +78,11 @@ function json_return($resp, $echo = false) {
   header('Content-Type: application/json');
   $return = json_encode(($resp));
   if($echo) {
-    //info(__FILE__, __FUNCTION__, __LINE__, $return);
     echo $return;
   }
+  list($usec, $sec) = explode(" ", microtime());
+  $time =  date("Y-m-d H:i:s:",$sec).intval(round($usec*1000));
+  info(__FILE__, __FUNCTION__, __LINE__, $time);
   return $return;
 }
 
@@ -92,7 +94,7 @@ function fail_return($details, $echo = true, $json = true, $success = true) {
       info(__FILE__, __FUNCTION__, __LINE__, $details);
       echo arg_to_str($details);
     }
-    return $details;
+      return $details;
   }
 }
 
