@@ -24,14 +24,42 @@ function db_read_location($args) {
       $d = distance($current_location[0], $current_location[1], $result[$i]['lat'], $result[$i]['lng']);
       if($min_dist > $d) {
         $min_dist = $d;
+        $min_div = $result[$i]['Division'];
         $min_lat = $result[$i]['lat'];
         $min_lng = $result[$i]['lng'];
+        //$nearest['distance'] = $d;
       }  
       //debug(__FILE__, __FUNCTION__, __LINE__, $min_dist);
     }
-    debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng);
+    debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng, $min_div);
     $nearest['lat'] = $min_lat;
     $nearest['lng'] = $min_lng;
+    // $nearest['distance'] = $min_dist;
+
+    $query = "SELECT lat, lng, Village AS Division 
+      FROM tmp_artisanal_mining_full
+      WHERE Village = '$min_div'
+      UNION
+      SELECT lat, lng, gsdivision AS Division 
+      FROM tmp_kaluthara_iml_c
+      WHERE gsdivision = '$min_div'";
+
+    $result1 = db_execute($query);
+    //debug(__FILE__, __FUNCTION__, __LINE__, $query);
+
+    $size = sizeof($result1);
+    debug(__FILE__, __FUNCTION__, __LINE__, $result1);
+
+    $radius = 100000000000000;
+    for($i=0;$i<$size;$i++) {
+      $distance = distance($min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
+      // debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
+      // debug(__FILE__, __FUNCTION__, __LINE__, $distance);
+      if($distance < $radius && $distance != 0) $radius = $distance;
+      // debug(__FILE__, __FUNCTION__, __LINE__, $radius);
+    }
+    if($radius > 10) $radius = 10;
+    $nearest['radius'] = $radius;
 
     succ_return(array(
     'Location' => $result,
@@ -159,32 +187,6 @@ function db_read_division($args) {
     ));
 }
 
-// function distance($x1,$y1,$x2,$y2) {
-//   return sqrt(pow($x1-$x2,2) + pow($y1 - $y2,2));
-// }
-
-// function distance($x1,$y1,$x2,$y2){
-
-//   $radius      = 3958;      // Earth's radius (miles)
-//   $pi          = 3.1415926;
-//   $deg_per_rad = 57.29578;  // Number of degrees/radian (for conversion)
-
-//   $point1['lat'] = $x1;
-//   $point1['long'] = $y1;
-//   $point2['lat'] = $x2;
-//   $point2['long'] = $y2;
-//   $distance = ($radius * $pi * sqrt(
-//               ($point1['lat'] - $point2['lat'])
-//               * ($point1['lat'] - $point2['lat'])
-//               + cos($point1['lat'] / $deg_per_rad)  // Convert these to
-//               * cos($point2['lat'] / $deg_per_rad)  // radians for cos()
-//               * ($point1['long'] - $point2['long'])
-//               * ($point1['long'] - $point2['long'])
-//       ) / 180);
-
-//   $distance = round($distance,1);
-//   return $distance;  // Returned using the units used for $radius.
-// }
 
 function distance($lat1, $lon1, $lat2, $lon2) {
 
