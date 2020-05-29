@@ -60,11 +60,12 @@ function db_read_location($args) {
     }
     if($radius > 10) $radius = 10;
     $nearest['radius'] = $radius;
+    $nearest['distance'] = distance(5.959917, 80.601349, 6.2416854, 80.530781);
 
     succ_return(array(
     'Location' => $result,
-    'nearest_place' => $nearest
-    ));
+    'nearest_place' => $nearest,
+      ));
 }
 
 //http://localhost/googlemap/svr/report.php?action=division_read&session_id=ss9h138m6eptg7g4ffgn5p5511
@@ -188,24 +189,47 @@ function db_read_division($args) {
 }
 
 
+// function distance($lat1, $lon1, $lat2, $lon2) {
+
+//   $pi80 = M_PI / 180;
+//   $lat1 *= $pi80;
+//   $lon1 *= $pi80;
+//   $lat2 *= $pi80;
+//   $lon2 *= $pi80;
+
+//   $r = 6372.797; // mean radius of Earth in km
+//   $dlat = $lat2 - $lat1;
+//   $dlon = $lon2 - $lon1;
+//   $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
+//   $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+//   $km = ($r * $c)*500;
+
+//   //echo '<br/>'.$km;
+//   return $km;
+// }
+ 
 function distance($lat1, $lon1, $lat2, $lon2) {
+  if (($lat1 == $lat2) && ($lon1 == $lon2)) {
+    return 0;
+  }
+  else {
+    $theta = $lon1 - $lon2;
+    $dist = sin(deg2rad($lat1)) * sin(deg2rad($lat2)) +  cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * cos(deg2rad($theta));
+    $dist = acos($dist);
+    $dist = rad2deg($dist);
+    $miles = $dist * 60 * 1.1515;
+    //$unit = strtoupper($unit);
 
-  $pi80 = M_PI / 180;
-  $lat1 *= $pi80;
-  $lon1 *= $pi80;
-  $lat2 *= $pi80;
-  $lon2 *= $pi80;
-
-  $r = 6372.797; // mean radius of Earth in km
-  $dlat = $lat2 - $lat1;
-  $dlon = $lon2 - $lon1;
-  $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
-  $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-  $km = ($r * $c)*500;
-
-  //echo '<br/>'.$km;
-  return $km;
+    // if ($unit == "K") {
+      return ($miles * 1.609344);
+    // } else if ($unit == "N") {
+    //   return ($miles * 0.8684);
+    // } else {
+    //   return $miles;
+    // }
+  }
 }
+
 
 //http://localhost/googlemap/svr/report.php?action=district_count&session_id=ss9h138m6eptg7g4ffgn5p5511
 function db_read_district_count($args) {
