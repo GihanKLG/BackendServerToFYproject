@@ -60,7 +60,8 @@ function db_read_location($args) {
     }
     if($radius > 10) $radius = 10;
     $nearest['radius'] = $radius;
-    $nearest['distance'] = distance(5.959917, 80.601349, 6.2416854, 80.530781);
+    $n_distance = distance(5.959917, 80.601349, 6.2416854, 80.530781);
+    $nearest['distance'] = $n_distance/500;
 
     succ_return(array(
     'Location' => $result,
@@ -221,7 +222,7 @@ function distance($lat1, $lon1, $lat2, $lon2) {
     //$unit = strtoupper($unit);
 
     // if ($unit == "K") {
-      return ($miles * 1.609344);
+      return ($miles * 1.609344*500);
     // } else if ($unit == "N") {
     //   return ($miles * 0.8684);
     // } else {
