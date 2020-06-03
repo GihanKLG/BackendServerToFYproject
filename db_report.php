@@ -55,13 +55,17 @@ function db_read_location($args) {
       $distance = distance($min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
       // debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
       // debug(__FILE__, __FUNCTION__, __LINE__, $distance);
-      if($distance < $radius && $distance != 0) $radius = $distance;
+      if($distance < $radius && $distance != 0) {
+        $radius = $distance;
+        $division = $result1[$i]['Division'];
+      }
       // debug(__FILE__, __FUNCTION__, __LINE__, $radius);
     }
     if($radius > 10) $radius = 10;
     $nearest['radius'] = $radius;
     $n_distance = distance(5.959917, 80.601349, 6.2416854, 80.530781);
     $nearest['distance'] = $n_distance/500;
+    $nearest['division'] = $division;
 
     succ_return(array(
     'Location' => $result,
