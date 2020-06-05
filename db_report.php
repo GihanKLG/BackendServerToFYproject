@@ -5,18 +5,44 @@ require_once 'db_user.php';
 //http://localhost/googlemap/svr/report.php?action=read&location=LatLng(5.959917,%2080.601349)&session_id=123456
 function db_read_location($args) {
 
+  $json = $str = file_get_contents('http://localhost:3000/Southern');
+  $json = json_decode($str, true);
+  $poly = '';
+
    $location = $args['location'];
    $size = strlen($location);
    $location = substr($location, 7, $size-8);
    $current_location = explode(', ', $location);
+
+   $vertices_x = array();
+   $vertices_y = array();
+   $size = sizeof($json);
+
+   for($i=0;$i<$size;$i++) {
+     $x = $json[$i][0];
+     $y = $json[$i][1];
+     array_push($vertices_x, $x);
+     array_push($vertices_y, $y);
+   }
+
+   $points_polygon = count($vertices_x) - 1;
+   $longitude_x = $current_location[1];
+   $latitude_y = $current_location[0];
+
+   if (is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y)){
+    $poly = "Is in polygon!";
+  }
+  else $poly = "Is not in polygon";
+
    $query = "SELECT lat, lng, Village AS Division 
     FROM tmp_artisanal_mining_full
     UNION
     SELECT lat, lng, gsdivision AS Division 
     FROM tmp_kaluthara_iml_c
-    -- UNION
-    -- SELECT lat, lng, Cu AS cubes
-    -- FROM tmp_ro_al_and_iml";
+    UNION
+    SELECT lat, lng, gs AS Division
+    FROM tmp_ro_al_and_iml";
+
     $result = db_execute($query);
     $min_dist = distance($current_location[0], $current_location[1], $result[1]['lat'], $result[1]['lng']);
     $size = sizeof($result);
@@ -42,10 +68,14 @@ function db_read_location($args) {
       UNION
       SELECT lat, lng, gsdivision AS Division 
       FROM tmp_kaluthara_iml_c
-      WHERE gsdivision = '$min_div'";
+      WHERE gsdivision = '$min_div'
+      UNION
+      SELECT lat, lng, gs AS Division
+      FROM tmp_ro_al_and_iml
+      WHERE gs = '$min_div'";
 
     $result1 = db_execute($query);
-    //debug(__FILE__, __FUNCTION__, __LINE__, $query);
+    debug(__FILE__, __FUNCTION__, __LINE__, $query);
 
     $size = sizeof($result1);
     debug(__FILE__, __FUNCTION__, __LINE__, $result1);
@@ -54,22 +84,25 @@ function db_read_location($args) {
     for($i=0;$i<$size;$i++) {
       $distance = distance($min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
       // debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng, $result1[$i]['lat'], $result1[$i]['lng']);
-      // debug(__FILE__, __FUNCTION__, __LINE__, $distance);
+      debug(__FILE__, __FUNCTION__, __LINE__, $distance);
       if($distance < $radius && $distance != 0) {
         $radius = $distance;
-        $division = $result1[$i]['Division'];
       }
-      // debug(__FILE__, __FUNCTION__, __LINE__, $radius);
+      //debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['Division']);
     }
     if($radius > 10) $radius = 10;
     $nearest['radius'] = $radius;
-    $n_distance = distance(5.959917, 80.601349, 6.2416854, 80.530781);
+    $n_distance = distance($current_location[0], $current_location[1], $min_lat, $min_lng);
     $nearest['distance'] = $n_distance/500;
-    $nearest['division'] = $division;
+    $nearest['division'] = $min_div;
 
     succ_return(array(
     'Location' => $result,
     'nearest_place' => $nearest,
+    // 'southern_provience' => $json,
+    'poly' => $poly
+    // 'x' => $vertices_x,
+    // 'Y' => $vertices_y
       ));
 }
 
@@ -256,5 +289,16 @@ succ_return(array(
   'district_count' => $result,
   ));
 
-}  
+}
+
+function is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y)
+{
+  $i = $j = $c = 0;
+  for ($i = 0, $j = $points_polygon ; $i < $points_polygon; $j = $i++) {
+    if ( (($vertices_y[$i]  >  $latitude_y != ($vertices_y[$j] > $latitude_y)) &&
+     ($longitude_x < ($vertices_x[$j] - $vertices_x[$i]) * ($latitude_y - $vertices_y[$i]) / ($vertices_y[$j] - $vertices_y[$i]) + $vertices_x[$i]) ) )
+       $c = !$c;
+  }
+  return $c;
+}
 ?>
