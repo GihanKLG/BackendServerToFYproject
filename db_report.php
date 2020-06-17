@@ -1,38 +1,20 @@
 <?php
 require_once 'db_user.php';
+require_once 'db_provience.php';
 
 
 //http://localhost/googlemap/svr/report.php?action=read&location=LatLng(5.959917,%2080.601349)&session_id=123456
 function db_read_location($args) {
 
-  $json = $str = file_get_contents('http://localhost:3000/Southern');
-  $json = json_decode($str, true);
-  $poly = '';
-
    $location = $args['location'];
    $size = strlen($location);
    $location = substr($location, 7, $size-8);
    $current_location = explode(', ', $location);
-
-   $vertices_x = array();
-   $vertices_y = array();
-   $size = sizeof($json);
-
-   for($i=0;$i<$size;$i++) {
-     $x = $json[$i][0];
-     $y = $json[$i][1];
-     array_push($vertices_x, $x);
-     array_push($vertices_y, $y);
-   }
-
-   $points_polygon = count($vertices_x) - 1;
    $longitude_x = $current_location[1];
    $latitude_y = $current_location[0];
 
-   if (is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y)){
-    $poly = "Is in polygon!";
-  }
-  else $poly = "Is not in polygon";
+   $province = db_find_provience($longitude_x, $latitude_y);
+   debug(__FILE__, __FUNCTION__, __LINE__, $province);
 
    $query = "SELECT lat, lng, Village AS Division 
     FROM tmp_artisanal_mining_full
@@ -53,14 +35,12 @@ function db_read_location($args) {
         $min_div = $result[$i]['Division'];
         $min_lat = $result[$i]['lat'];
         $min_lng = $result[$i]['lng'];
-        //$nearest['distance'] = $d;
       }  
       //debug(__FILE__, __FUNCTION__, __LINE__, $min_dist);
     }
     debug(__FILE__, __FUNCTION__, __LINE__, $min_lat, $min_lng, $min_div);
     $nearest['lat'] = $min_lat;
     $nearest['lng'] = $min_lng;
-    // $nearest['distance'] = $min_dist;
 
     $query = "SELECT lat, lng, Village AS Division 
       FROM tmp_artisanal_mining_full
@@ -99,10 +79,7 @@ function db_read_location($args) {
     succ_return(array(
     'Location' => $result,
     'nearest_place' => $nearest,
-    // 'southern_provience' => $json,
-    'poly' => $poly
-    // 'x' => $vertices_x,
-    // 'Y' => $vertices_y
+    'province' => $province
       ));
 }
 
@@ -120,16 +97,13 @@ function db_read_division($args) {
     SELECT gsdivision AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_kaluthara_iml_c
     GROUP BY Division
-    -- UNION
-    -- SELECT gs AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
-    -- FROM tmp_ro_al_and_iml
-    -- GROUP BY Division";
+    UNION
+    SELECT gs AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
+    FROM tmp_ro_al_and_iml
+    GROUP BY Division";
 
   $result = db_execute($query);
   $length = sizeof($result);
-  // $points = array();
-  // $coord = array(3.1415926, 57.29578);
-  // $min = 100;
   $sum = 0;
 
   for($i=0;$i<$length;$i++) {
@@ -225,26 +199,6 @@ function db_read_division($args) {
     'Location' => $result,
     ));
 }
-
-
-// function distance($lat1, $lon1, $lat2, $lon2) {
-
-//   $pi80 = M_PI / 180;
-//   $lat1 *= $pi80;
-//   $lon1 *= $pi80;
-//   $lat2 *= $pi80;
-//   $lon2 *= $pi80;
-
-//   $r = 6372.797; // mean radius of Earth in km
-//   $dlat = $lat2 - $lat1;
-//   $dlon = $lon2 - $lon1;
-//   $a = sin($dlat / 2) * sin($dlat / 2) + cos($lat1) * cos($lat2) * sin($dlon / 2) * sin($dlon / 2);
-//   $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-//   $km = ($r * $c)*500;
-
-//   //echo '<br/>'.$km;
-//   return $km;
-// }
  
 function distance($lat1, $lon1, $lat2, $lon2) {
   if (($lat1 == $lat2) && ($lon1 == $lon2)) {
@@ -256,15 +210,8 @@ function distance($lat1, $lon1, $lat2, $lon2) {
     $dist = acos($dist);
     $dist = rad2deg($dist);
     $miles = $dist * 60 * 1.1515;
-    //$unit = strtoupper($unit);
 
-    // if ($unit == "K") {
-      return ($miles * 1.609344*500);
-    // } else if ($unit == "N") {
-    //   return ($miles * 0.8684);
-    // } else {
-    //   return $miles;
-    // }
+    return ($miles * 1.609344*500);
   }
 }
 
@@ -289,16 +236,5 @@ succ_return(array(
   'district_count' => $result,
   ));
 
-}
-
-function is_in_polygon($points_polygon, $vertices_x, $vertices_y, $longitude_x, $latitude_y)
-{
-  $i = $j = $c = 0;
-  for ($i = 0, $j = $points_polygon ; $i < $points_polygon; $j = $i++) {
-    if ( (($vertices_y[$i]  >  $latitude_y != ($vertices_y[$j] > $latitude_y)) &&
-     ($longitude_x < ($vertices_x[$j] - $vertices_x[$i]) * ($latitude_y - $vertices_y[$i]) / ($vertices_y[$j] - $vertices_y[$i]) + $vertices_x[$i]) ) )
-       $c = !$c;
-  }
-  return $c;
 }
 ?>
