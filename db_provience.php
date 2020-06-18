@@ -44,6 +44,13 @@ function db_find_provience($longitude_x, $latitude_y) {
    for($i=0;$i<$size;$i++) {
      $x = $southern[$i][0];
      $y = $southern[$i][1];
+    //  $p = $matara[$i][0];
+    //  $q = $matara[$i][1];
+    //  if($i <= 1264) {
+    //    $query = "INSERT INTO tbl_district (district, lat, lng)
+    //     VALUES ('Anuradhapura', '$p', '$q')";
+    //     $resp = db_execute($query); 
+    // }
      array_push($vertices_x, $x);
      array_push($vertices_y, $y);
    }
