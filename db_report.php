@@ -16,14 +16,22 @@ function db_read_location($args) {
    $province = db_find_provience($longitude_x, $latitude_y);
    debug(__FILE__, __FUNCTION__, __LINE__, $province);
 
-   $query = "SELECT lat, lng, Village AS Division 
+   $query = "SELECT lat, lng, Village AS Division
     FROM tmp_artisanal_mining_full
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
     UNION
     SELECT lat, lng, gsdivision AS Division 
     FROM tmp_kaluthara_iml_c
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
     UNION
     SELECT lat, lng, gs AS Division
-    FROM tmp_ro_al_and_iml";
+    FROM tmp_ro_al_and_iml
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30";
+
+    debug(__FILE__, __FUNCTION__, __LINE__, $query);
 
     $result = db_execute($query);
     $min_dist = distance($current_location[0], $current_location[1], $result[1]['lat'], $result[1]['lng']);
@@ -45,14 +53,20 @@ function db_read_location($args) {
     $query = "SELECT lat, lng, Village AS Division 
       FROM tmp_artisanal_mining_full
       WHERE Village = '$min_div'
+      AND 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+      POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
       UNION
       SELECT lat, lng, gsdivision AS Division 
       FROM tmp_kaluthara_iml_c
       WHERE gsdivision = '$min_div'
+      AND 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+      POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
       UNION
       SELECT lat, lng, gs AS Division
       FROM tmp_ro_al_and_iml
-      WHERE gs = '$min_div'";
+      WHERE gs = '$min_div'
+      AND 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+      POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30";
 
     $result1 = db_execute($query);
     debug(__FILE__, __FUNCTION__, __LINE__, $query);
@@ -71,7 +85,7 @@ function db_read_location($args) {
       //debug(__FILE__, __FUNCTION__, __LINE__, $result[$i]['Division']);
     }
     if($radius > 10) $radius = 10;
-    $nearest['radius'] = $radius;
+    $nearest['radius'] = $radius/1000;
     $n_distance = distance($current_location[0], $current_location[1], $min_lat, $min_lng);
     $nearest['distance'] = $n_distance/500;
     $nearest['division'] = $min_div;
@@ -92,14 +106,20 @@ function db_read_division($args) {
   FROM tmp_kaluthara_iml_c";
   $query = "SELECT GN AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_artisanal_mining_full
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
     GROUP BY Division
     UNION 
     SELECT gsdivision AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_kaluthara_iml_c
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
     GROUP BY Division
     UNION
     SELECT gs AS Division, GROUP_CONCAT(lat) AS lat, GROUP_CONCAT(lng) AS lng, count(lat) AS count
     FROM tmp_ro_al_and_iml
+    WHERE 3956 * 2 * ASIN(SQRT( POWER(SIN(($latitude_y - lat) * pi()/180 / 2), 2) + COS($latitude_y * pi()/180) * COS(lat * pi()/180) *
+    POWER(SIN(($longitude_x - lng) * pi()/180 / 2), 2) )) <= 30
     GROUP BY Division";
 
   $result = db_execute($query);
